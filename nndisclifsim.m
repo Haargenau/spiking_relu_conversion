@@ -1,4 +1,4 @@
-function nn=nnlifsim(nn, test_x, test_y, opts)
+function nn=nndisclifsim(nn, test_x, test_y, opts)
 dt = opts.dt;
 nn.performance = [];
 num_examples = size(test_x,1);
@@ -6,9 +6,8 @@ num_examples = size(test_x,1);
 % Initialize network architecture
 for l = 1 : numel(nn.size)
     blank_neurons = zeros(num_examples, nn.size(l));
-    nn.layers{l}.mem = blank_neurons;
-    nn.layers{l}.refrac_end = blank_neurons;        
-    nn.layers{l}.sum_spikes = blank_neurons;
+    nn.layers{l}.disc_mem = int32(blank_neurons);     
+    nn.layers{l}.disc_sum_spikes = int32(blank_neurons);
 end
 
 % Precache answers
@@ -23,23 +22,21 @@ for t=dt:dt:opts.duration
         inp_image = spike_snapshot <= test_x;
 
         nn.layers{1}.spikes = inp_image;
-        nn.layers{1}.sum_spikes = nn.layers{1}.sum_spikes + inp_image;
+        nn.layers{1}.disc_sum_spikes = nn.layers{1}.disc_sum_spikes + int32(inp_image);
         for l = 2 : numel(nn.size)
             % Get input impulse from incoming spikes
-            impulse = nn.layers{l-1}.spikes*nn.W{l-1}';
+            impulse = int32(nn.layers{l-1}.spikes*nn.W{l-1}');
             % Add input to membrane potential
-            nn.layers{l}.mem = nn.layers{l}.mem + impulse;
+            nn.layers{l}.disc_mem = nn.layers{l}.disc_mem + impulse;
             % Check for spiking
-            nn.layers{l}.spikes = nn.layers{l}.mem >= opts.threshold;
+            nn.layers{l}.spikes = nn.layers{l}.disc_mem >= int32(opts.threshold);
             % Reset
-            nn.layers{l}.mem(nn.layers{l}.spikes) = 0;
-            % Ban updates until....
-            nn.layers{l}.refrac_end(nn.layers{l}.spikes) = t + opts.t_ref;
+            nn.layers{l}.disc_mem(nn.layers{l}.spikes) = 0;
             % Store result for analysis later
-            nn.layers{l}.sum_spikes = nn.layers{l}.sum_spikes + nn.layers{l}.spikes;            
+            nn.layers{l}.disc_sum_spikes = nn.layers{l}.disc_sum_spikes + int32(nn.layers{l}.spikes);            
         end
         if(mod(round(t/dt),round(opts.report_every/dt)) == round(opts.report_every/dt)-1)
-            [~, guess_idx] = max(nn.layers{end}.sum_spikes');
+            [~, guess_idx] = max(nn.layers{end}.disc_sum_spikes');
             acc = sum(guess_idx==ans_idx)/size(test_y,1)*100;
             fprintf('Time: %1.3fs | Accuracy: %2.2f%%.\n', t, acc);
             nn.performance(end+1) = acc;
@@ -50,7 +47,7 @@ end
     
     
 % Get answer
-[~, guess_idx] = max(nn.layers{end}.sum_spikes');
+[~, guess_idx] = max(nn.layers{end}.disc_sum_spikes');
 acc = sum(guess_idx==ans_idx)/size(test_y,1)*100;
 fprintf('\nFinal spiking accuracy: %2.2f%%\n', acc);
 
