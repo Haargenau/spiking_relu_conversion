@@ -61,9 +61,23 @@ fprintf('Minimum elem = %f\n', min_val);
 scales = [0 0];
 scales(1) = max_neg/min_val;
 scales(2) = max_pos/max_val;
-scale = min(scales);
-fprintf('Scale value = %d\n', round(scale));
+scale = round(min(scales));
+fprintf('Scale value = %d\n', scale);
 % maybe scale layers independently
+for i = 2 : nn.n
+    nn.scaled_W{i-1} = round(nn.W{i-1}.*scale);
+end
+%% Test scaled spiking network on HW-simulation
+t_scaled_opts = struct;
+t_scaled_opts.t_ref        = 0.000;
+t_scaled_opts.threshold    = 1.0*scale;
+t_scaled_opts.dt           = 0.001;
+t_scaled_opts.duration     = 0.035;
+t_scaled_opts.report_every = 0.001;
+t_scaled_opts.max_rate     = 900;
+
+nn_scaled = nndisclifsim(nn, test_x, test_y, t_scaled_opts);
+fprintf('Done.\n');
 %% Write scaled weights to file
 for i = 2 : nn.n
     % scale, cast and write to file
@@ -71,35 +85,9 @@ for i = 2 : nn.n
     writematrix(int8(nn.W{i-1}.*double(scale)), f_name);
 end
 %% Import scaled weights
-nn_scaled = nnsetup([784 200 10]);
-nn_scaled.activation_function = 'relu';
-nn_scaled.output ='relu';
-for i = 2 : nn_scaled.n
+for i = 2 : nn.n
     f_name = strcat("weights_200_neurons_4_bit_layer_", int2str(i-1), ".txt");
-    nn_scaled.W{i-1} = readmatrix(f_name);
+    nn.scaled_W{i-1} = readmatrix(f_name);
 end
-%% Test scaled spiking network
-t_scaled_opts = struct;
-t_scaled_opts.t_ref        = 0.000;
-t_scaled_opts.threshold    = 1.0*round(scale);
-t_scaled_opts.dt           = 0.001;
-t_scaled_opts.duration     = 0.035;
-t_scaled_opts.report_every = 0.001;
-t_scaled_opts.max_rate     = 900;
-
-nn_scaled = nnlifsim(nn_scaled, test_x, test_y, t_scaled_opts);
-fprintf('Done.\n');
-%% Test scaled spiking network on HW-simulation
-t_scaled_opts = struct;
-t_scaled_opts.t_ref        = 0.000;
-t_scaled_opts.threshold    = 1.0*round(scale);
-t_scaled_opts.dt           = 0.001;
-t_scaled_opts.duration     = 0.035;
-t_scaled_opts.report_every = 0.001;
-t_scaled_opts.max_rate     = 900;
-
-nn_scaled = nndisclifsim(nn_scaled, test_x, test_y, t_scaled_opts);
-fprintf('Done.\n');
-
-%% Generate input spikes
+%% Generate input spikes and write to file
 nngenspikes(nn_scaled, test_x, test_y, t_scaled_opts)

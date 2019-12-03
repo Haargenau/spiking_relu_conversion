@@ -25,7 +25,7 @@ for t=dt:dt:opts.duration
         nn.layers{1}.disc_sum_spikes = nn.layers{1}.disc_sum_spikes + int32(inp_image);
         for l = 2 : numel(nn.size)
             % Get input impulse from incoming spikes
-            impulse = int32(nn.layers{l-1}.spikes*nn.W{l-1}');
+            impulse = int32(nn.layers{l-1}.spikes*nn.scaled_W{l-1}');
             % Add input to membrane potential
             nn.layers{l}.disc_mem = nn.layers{l}.disc_mem + impulse;
             % Check for spiking
