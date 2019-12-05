@@ -61,27 +61,28 @@ fprintf('Minimum elem = %f\n', min_val);
 scales = [0 0];
 scales(1) = max_neg/min_val;
 scales(2) = max_pos/max_val;
-scale = round(min(scales));
+scale = min(scales);
 fprintf('Scale value = %d\n', scale);
 % maybe scale layers independently
+%% Scale network weights
 for i = 2 : nn.n
     nn.scaled_W{i-1} = round(nn.W{i-1}.*scale);
 end
 %% Test scaled spiking network on HW-simulation
 t_scaled_opts = struct;
 t_scaled_opts.t_ref        = 0.000;
-t_scaled_opts.threshold    = 1.0*scale;
+t_scaled_opts.threshold    = 1.0*round(scale);
 t_scaled_opts.dt           = 0.001;
 t_scaled_opts.duration     = 0.035;
 t_scaled_opts.report_every = 0.001;
 t_scaled_opts.max_rate     = 900;
 
-nn_scaled = nndisclifsim(nn, test_x, test_y, t_scaled_opts);
+nn = nndisclifsim(nn, test_x, test_y, t_scaled_opts);
 fprintf('Done.\n');
 %% Write scaled weights to file
 for i = 2 : nn.n
     % scale, cast and write to file
-    f_name = strcat("weights_200_neurons_4_bit_layer_", int2str(i-1), ".txt");
+    f_name = strcat("weights/weights_layer_", int2str(i-1), ".txt");
     writematrix(int8(nn.W{i-1}.*double(scale)), f_name);
 end
 %% Import scaled weights
@@ -90,4 +91,24 @@ for i = 2 : nn.n
     nn.scaled_W{i-1} = readmatrix(f_name);
 end
 %% Generate input spikes and write to file
-nngenspikes(nn_scaled, test_x, test_y, t_scaled_opts)
+nngenspikes(nn, test_x, test_y, t_scaled_opts)
+
+%% Write scaled spike sums to file
+for i = 2 : nn.n
+    f_name = strcat("out_spikes/spike_sums_layer_", int2str(i-1), ".txt");
+    writematrix(nn.layers{1,i}.disc_sum_spikes(1:10,:), f_name);
+end
+
+%% Write input spikes to file
+for i = 1 : 10
+    % write spikes
+    f_name = strcat("in_spikes/input_spikes_img_", int2str(i-1), ".txt");
+    example = [];
+    for j = 1:35
+        example = vertcat(nn.disc_input_spikes{1,j}(i,:), example);
+    end
+    writematrix(example, f_name);
+    % write label
+    f_name = strcat("in_spikes/input_label_img_", int2str(i-1), ".txt");
+    writematrix(test_y(i,:), f_name);
+end

@@ -23,6 +23,9 @@ for t=dt:dt:opts.duration
 
         nn.layers{1}.spikes = inp_image;
         nn.layers{1}.disc_sum_spikes = nn.layers{1}.disc_sum_spikes + int32(inp_image);
+        
+        nn.disc_input_spikes{int8(t/dt)} = inp_image;
+        
         for l = 2 : numel(nn.size)
             % Get input impulse from incoming spikes
             impulse = int32(nn.layers{l-1}.spikes*nn.scaled_W{l-1}');
