@@ -1,25 +1,52 @@
-%% Train an example FC network to achieve very high classification, fast.
-%    Load paths
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                                       %%
+%%       FF-ReLU Network Training for FPGA implementation                %%
+%%                                                                       %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                         %
+%   In this file a feedforwad network of rectified linear units is        %
+%   is trained using backpropagation. The weights are then scaled         %
+%   to be used with discrete LIF-neurons implemented on an FPGA.          %
+%                                                                         %
+%   This is an extension of, P. U. Diehl, D. Neil, J. Binas, M. Cook,     %
+%   S.-C. Liu, and M. Pfeiffer, “Fast-classifying, high-accuracy spiking  %
+%   deep networks through weight and threshold balancing,” in 2015        %
+%   International Joint Conference on Neural Networks (IJCNN), pp. 1–8,   %
+%   IEEE.                                                                 %
+%                                                                         %
+%   Further informations can be found at...                               %
+%                                                                         %
+%   Authors: Martin Haar                                                  %
+%            Max Geiselbrechtinger                                        %
+%                                                                         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% 1. Load data
+% Load DeepLearningToolbox
 addpath(genpath('./dlt_cnn_map_dropout_nobiasnn'));
-%% Load data
+
+% Load MNIST dataset
 rand('state', 0);
 load mnist_uint8;
 train_x = 1 - double(train_x) / 255;
 test_x  = 1 - double(test_x)  / 255;
 train_y = double(train_y);
 test_y  = double(test_y);
-% Initialize net
-%nn = nnsetup([784 1200 1200 10]);
+
+%% 2. Initialize training network
+% Feedforward network - hiddenlayer constrained by FPGA size
 nn = nnsetup([784 200 10]);
-% Rescale weights for ReLU
-for i = 2 : nn.n   
-    % Weights - choose between as proposed in Dre05
-    nn.W{i - 1} = (rand(nn.size(i), nn.size(i - 1)) - 0.5) * 2 * sqrt(3 / (nn.size(i - 1)));
-end
-%% ReLU Train
-% Set up learning constants
 nn.activation_function = 'relu';
 nn.output ='relu';
+
+% Rescale weights
+for i = 2 : nn.n   
+    % Weights - choose as proposed in Dre05
+    nn.W{i - 1} = (rand(nn.size(i), nn.size(i - 1)) - 0.5) * 2 * sqrt(3 / (nn.size(i - 1)));
+end
+
+%% 3. Train training network
+% Set up learning constants
 nn.learningRate = 0.002;
 nn.momentum = 0.0005;
 nn.learn_bias = 0;
@@ -27,13 +54,15 @@ nn.learn_bias = 0;
 opts.numepochs =  70;
 opts.batchsize = 100;
 nn = nntrain(nn, train_x, train_y, opts);
-%% ReLU Test
+
+%% 4. Test training network
 % Test - should be 93.65% after 70 epochs
 [er, train_bad] = nntest(nn, train_x, train_y);
-fprintf('TRAINING Accuracy: %2.2f%%.\n', (1-er)*100);
+fprintf('Training Accuracy: %2.2f%%.\n', (1-er)*100);
 [er, bad] = nntest(nn, test_x, test_y);
 fprintf('Test Accuracy: %2.2f%%.\n', (1-er)*100);
-%% Spike-based Testing of Fully-Connected NN
+
+%% 5. Simulate deployment network with float weights
 % Sim - should be 93.24%
 t_opts = struct;
 t_opts.t_ref        = 0.000;
@@ -45,30 +74,37 @@ t_opts.max_rate     =   800;
 
 nn = nnlifsim(nn, test_x, test_y, t_opts);
 fprintf('Done.\n');
-%% Determine scale factor (manually)
+
+%% 6. Scale deployment network weights
+% Determine scale factor
+% Set values to maximum negative and positive range of weights in HW
 max_pos = 7;
 max_neg = 8;
-max_vals = [0 0];
-min_vals = [0 0];
+max_vals = zeros(1,nn.n-1);
+min_vals = zeros(1,nn.n-1);
 for i = 2 : nn.n
     max_vals(i-1) = abs(max(nn.W{i-1}(:)));
     min_vals(i-1) = abs(min(nn.W{i-1}(:)));
 end
 max_val = max(max_vals);
 min_val = max(min_vals);
-fprintf('Maximum elem = %f\n', max_val);
-fprintf('Minimum elem = %f\n', min_val);
+fprintf('Maximum elem before scaling: %f\n', max_val);
+fprintf('Minimum elem before scaling: -%f\n', min_val);
 scales = [0 0];
 scales(1) = max_neg/min_val;
 scales(2) = max_pos/max_val;
 scale = min(scales);
 fprintf('Scale value = %d\n', scale);
-% maybe scale layers independently
-%% Scale network weights
+
+% Scale weights
 for i = 2 : nn.n
     nn.scaled_W{i-1} = round(nn.W{i-1}.*scale);
 end
-%% Test scaled spiking network on HW-simulation
+
+fprintf('Maximum elem after scaling: %d\n', int16(max_val*scale));
+fprintf('Minimum elem after scaling: -%d\n', int16(min_val*scale));
+
+%% 7. Simulate deployment network with scaled weights
 t_scaled_opts = struct;
 t_scaled_opts.t_ref        = 0.000;
 t_scaled_opts.threshold    = 1.0*round(scale);
@@ -79,36 +115,3 @@ t_scaled_opts.max_rate     = 900;
 
 nn = nndisclifsim(nn, test_x, test_y, t_scaled_opts);
 fprintf('Done.\n');
-%% Write scaled weights to file
-for i = 2 : nn.n
-    % scale, cast and write to file
-    f_name = strcat("weights/weights_layer_", int2str(i-1), ".txt");
-    writematrix(int8(nn.W{i-1}.*double(scale)), f_name);
-end
-%% Import scaled weights
-for i = 2 : nn.n
-    f_name = strcat("weights_200_neurons_4_bit_layer_", int2str(i-1), ".txt");
-    nn.scaled_W{i-1} = readmatrix(f_name);
-end
-%% Generate input spikes and write to file
-nngenspikes(nn, test_x, test_y, t_scaled_opts)
-
-%% Write scaled spike sums to file
-for i = 2 : nn.n
-    f_name = strcat("out_spikes/spike_sums_layer_", int2str(i-1), ".txt");
-    writematrix(nn.layers{1,i}.disc_sum_spikes(1:10,:), f_name);
-end
-
-%% Write input spikes to file
-for i = 1 : 10
-    % write spikes
-    f_name = strcat("in_spikes/input_spikes_img_", int2str(i-1), ".txt");
-    example = [];
-    for j = 1:35
-        example = vertcat(nn.disc_input_spikes{1,j}(i,:), example);
-    end
-    writematrix(example, f_name);
-    % write label
-    f_name = strcat("in_spikes/input_label_img_", int2str(i-1), ".txt");
-    writematrix(test_y(i,:), f_name);
-end

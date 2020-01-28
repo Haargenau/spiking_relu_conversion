@@ -1,3 +1,11 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                         %
+%   Simulates network of LIF-neurons corresponding to HW implementation   %
+%                                                                         %
+%   Authors: Martin Haar                                                  %
+%            Max Geiselbrechtinger                                        %
+%                                                                         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function nn=nndisclifsim(nn, test_x, test_y, opts)
 dt = opts.dt;
 nn.performance = [];
@@ -47,7 +55,6 @@ for t=dt:dt:opts.duration
             fprintf('.');            
         end
 end
-    
     
 % Get answer
 [~, guess_idx] = max(nn.layers{end}.disc_sum_spikes');
