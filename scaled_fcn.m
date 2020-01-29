@@ -51,7 +51,7 @@ nn.learningRate = 0.002;
 nn.momentum = 0.0005;
 nn.learn_bias = 0;
 % Train 70 epochs for optimal performance with scaled weights
-opts.numepochs =  70;
+opts.numepochs =  65;
 opts.batchsize = 100;
 nn = nntrain(nn, train_x, train_y, opts);
 
@@ -107,11 +107,11 @@ fprintf('Minimum elem after scaling: -%d\n', int16(min_val*scale));
 %% 7. Simulate deployment network with scaled weights
 t_scaled_opts = struct;
 t_scaled_opts.t_ref        = 0.000;
-t_scaled_opts.threshold    = 1.0*round(scale);
+t_scaled_opts.threshold    = 1.0*round(scale); 
 t_scaled_opts.dt           = 0.001;
 t_scaled_opts.duration     = 0.035;
 t_scaled_opts.report_every = 0.001;
-t_scaled_opts.max_rate     = 900;
+t_scaled_opts.max_rate     =   900;
 
 nn = nndisclifsim(nn, test_x, test_y, t_scaled_opts);
 fprintf('Done.\n');

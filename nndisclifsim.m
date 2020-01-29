@@ -61,4 +61,5 @@ end
 acc = sum(guess_idx==ans_idx)/size(test_y,1)*100;
 fprintf('\nFinal spiking accuracy: %2.2f%%\n', acc);
 
+nn.sim_acc = sum(guess_idx==ans_idx)/size(test_y,1)*100;
 end
