@@ -55,7 +55,7 @@ num_epochs = 15;
 configs = {[784 200 10], [784 400 10], [784 800 10]};
 
 % produce file for all configs
-for c=1:size(configs)
+for c=1:numel(configs)
     fprintf('Sim for config %d started.\n', c);
     % acc vector [ann_acc, snn_acc, snn_4_acc, snn_6_acc, snn_8_acc]
     tmp_acc = zeros(5,num_epochs);
