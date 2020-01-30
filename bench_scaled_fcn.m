@@ -52,7 +52,7 @@ t_scaled_opts.max_rate     =   900;
 
 num_avg = 20;
 num_epochs = 15;
-configs = {[784 200 10], [784 400 10], [784 800 10]};
+configs = {[784 200 200 10], [784 400 400 10], [784 800 800 10]};
 
 % produce file for all configs
 for c=1:numel(configs)
