@@ -20,6 +20,8 @@
 %            Max Geiselbrechtinger                                        %
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+clearvars
 
 %% 1. Load data
 % Load DeepLearningToolbox
@@ -50,7 +52,7 @@ end
 nn.learningRate = 0.002;
 nn.momentum = 0.0005;
 nn.learn_bias = 0;
-% Train 70 epochs for optimal performance with scaled weights
+% Train 65 epochs for optimal performance with scaled weights
 opts.numepochs =  65;
 opts.batchsize = 100;
 nn = nntrain(nn, train_x, train_y, opts);

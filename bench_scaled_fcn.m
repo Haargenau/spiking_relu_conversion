@@ -155,3 +155,12 @@ for c=1:numel(configs)
     fprintf('Sim for config %d finished.\n', c);
 end
 
+%%
+labels = 'epochs,ann,snn,snn_4,snn_6,snn_8\n';
+A = readmatrix("csv/results_800x1.csv");
+B = horzcat([10:10:150]',A');
+writematrix(B, "csv/results_800x1_new.csv");
+%f = fopen("csv/results_800x1_new.csv", "a+");
+%frewind(f);
+%fprintf(f,labels);
+%fclose(f);
