@@ -1,0 +1,5 @@
+# ignore all dirs
+*/*
+# whitelist following dirs
+!csv/**
+!dlt_cnn_map_dropout_nobiasnn/**
