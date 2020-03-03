@@ -5,8 +5,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                         %
 %   In this file a feedforwad network of rectified linear units is        %
-%   is trained using backpropagation. The weights are then scaled         %
-%   to be used with discrete LIF-neurons implemented on an FPGA.          %
+%   trained using backpropagation. The weights are then scaled to be      %
+%   used by a network of discrete LIF-neurons implemented on an FPGA.     %
 %                                                                         %
 %   This is an extension of, P. U. Diehl, D. Neil, J. Binas, M. Cook,     %
 %   S.-C. Liu, and M. Pfeiffer, “Fast-classifying, high-accuracy spiking  %
@@ -14,7 +14,7 @@
 %   International Joint Conference on Neural Networks (IJCNN), pp. 1–8,   %
 %   IEEE.                                                                 %
 %                                                                         %
-%   Further informations can be found at...                               %
+%   Further informations can be found in our bachelor thesis.             %
 %                                                                         %
 %   Authors: Martin Haar                                                  %
 %            Max Geiselbrechtinger                                        %

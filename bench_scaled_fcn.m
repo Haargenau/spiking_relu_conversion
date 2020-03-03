@@ -4,9 +4,11 @@
 %%                                                                       %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                         %
-%   In this file a feedforwad network of rectified linear units is        %
-%   is trained using backpropagation. The weights are then scaled         %
-%   to be used with discrete LIF-neurons implemented on an FPGA.          %
+%   In this file different feedforwad network of rectified linear units   %
+%   are trained using backpropagation. The weights of the networks are    %
+%   then scaled to meet the HW requirements. For benchmarking purposes    %
+%   several runs of the different networks are performed and the          %
+%   corresponding accuracies are recorded.                                %
 %                                                                         %
 %   This is an extension of, P. U. Diehl, D. Neil, J. Binas, M. Cook,     %
 %   S.-C. Liu, and M. Pfeiffer, “Fast-classifying, high-accuracy spiking  %
@@ -14,7 +16,7 @@
 %   International Joint Conference on Neural Networks (IJCNN), pp. 1–8,   %
 %   IEEE.                                                                 %
 %                                                                         %
-%   Further informations can be found at...                               %
+%   Further informations can be found in our bachelor thesis.             %
 %                                                                         %
 %   Authors: Martin Haar                                                  %
 %            Max Geiselbrechtinger                                        %
@@ -157,10 +159,21 @@ end
 
 %%
 labels = 'epochs,ann,snn,snn_4,snn_6,snn_8\n';
-A = readmatrix("csv/results_800x1.csv");
+A = readmatrix("csv/results_800x800x1.csv");
 B = horzcat([10:10:150]',A');
-writematrix(B, "csv/results_800x1_new.csv");
+writematrix(B, "csv/results_800x2_new.csv");
 %f = fopen("csv/results_800x1_new.csv", "a+");
 %frewind(f);
 %fprintf(f,labels);
 %fclose(f);
+
+%%
+A = readmatrix("csv/results_200x1.csv");
+B = readmatrix("csv/results_400x1.csv");
+C = readmatrix("csv/results_800x1.csv");
+
+mA = max(A');
+mB = max(B');
+mC = max(C');
+
+writematrix([mA; mB; mC], "csv/scale_x1.csv");
